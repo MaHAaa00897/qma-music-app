@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LogBox } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { Provider } from '@/components/Provider';
+import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
 
 import '../global.css';
 
@@ -14,17 +15,22 @@ LogBox.ignoreLogs([
 export default function RootLayout() {
   return (
     <Provider>
-      <Stack
-        screenOptions={{
-          animation: 'slide_from_right',
-          gestureEnabled: true,
-          gestureDirection: 'horizontal',
-          headerShown: false
-        }}
-      >
-        <Stack.Screen name="index" options={{ title: "" }} />
-      </Stack>
-      <Toast />
+      <MusicPlayerProvider>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            animation: 'slide_from_right',
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            headerShown: false
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ title: "", animation: 'none', gestureEnabled: false }} />
+          <Stack.Screen name="player" options={{ title: "正在播放", animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="playlist-detail" options={{ title: "" }} />
+        </Stack>
+        <Toast />
+      </MusicPlayerProvider>
     </Provider>
   );
 }

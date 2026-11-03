@@ -1,5 +1,8 @@
 import express from "express";
 import cors from "cors";
+import tracksRouter from "./routes/tracks.ts";
+import playlistsRouter from "./routes/playlists.ts";
+import historyRouter from "./routes/history.ts";
 
 const app = express();
 const port = process.env.PORT || 9091;
@@ -14,6 +17,9 @@ app.get('/api/v1/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+app.use('/api/v1/tracks', tracksRouter);
+app.use('/api/v1/playlists', playlistsRouter);
+app.use('/api/v1/history', historyRouter);
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}/`);

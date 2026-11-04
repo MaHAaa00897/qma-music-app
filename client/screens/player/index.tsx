@@ -5,8 +5,10 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ScrollView,
   Animated,
+  Modal,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +20,20 @@ import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { trackTint } from '@/components/player/SongRow';
 import { coverForTitle, formatDuration } from '@/utils/format';
 import { FontAwesome6 } from '@expo/vector-icons';
+
+interface BgTheme {
+  name: string;
+  colors: [string, string, string];
+}
+
+const BG_THEMES: BgTheme[] = [
+  { name: '午夜紫', colors: ['#241245', '#3A1C71', '#0A0A0F'] },
+  { name: '极光青', colors: ['#062A3A', '#0E5F6E', '#0A0A0F'] },
+  { name: '烈焰橙', colors: ['#3A0B0B', '#B45309', '#140805'] },
+  { name: '深海蓝', colors: ['#0A1533', '#1E3A8A', '#060B1A'] },
+  { name: '霓虹粉', colors: ['#3A0E2E', '#9D174D', '#14050E'] },
+  { name: '翡翠绿', colors: ['#042F2E', '#0F766E', '#04100F'] },
+];
 
 export default function PlayerScreen() {
   const {
@@ -43,6 +59,8 @@ export default function PlayerScreen() {
   const [dragMs, setDragMs] = useState<number | null>(null);
   const [showQueue, setShowQueue] = useState(false);
   const [spin] = useState(() => new Animated.Value(0));
+  const [themeIdx, setThemeIdx] = useState(0);
+  const [themeVisible, setThemeVisible] = useState(false);
 
   const cover = current?.cover_url || (current ? coverForTitle(current.title, current.artist) : '');
 
@@ -64,6 +82,7 @@ export default function PlayerScreen() {
   const shownPos = dragMs ?? positionMs;
   const maxMs = Math.max(durationMs, 1);
   const tint = current ? trackTint(current) : '#8A63FF';
+  const bgTheme = BG_THEMES[themeIdx];
 
   const repeatIcon = useMemo(() => {
     if (repeatMode === 'one') {
@@ -84,15 +103,14 @@ export default function PlayerScreen() {
   return (
     <Screen backgroundColor="#0A0A0F" statusBarStyle="light" safeAreaEdges={['top', 'left', 'right']}>
       <View style={styles.container}>
-        {/* 动态背景：封面模糊 + 暗化 + 渐变 */}
+        {/* 动态背景：主题色渐变 + 封面模糊 + 暗化 */}
+        <LinearGradient colors={bgTheme.colors} style={styles.backdrop} />
         {cover ? (
-          <Image source={{ uri: cover }} style={styles.backdrop} blurRadius={60} />
-        ) : (
-          <View style={[styles.backdrop, { backgroundColor: tint }]} />
-        )}
+          <Image source={{ uri: cover }} style={[styles.backdrop, styles.backdropImage]} blurRadius={78} />
+        ) : null}
         <View style={styles.backdropDim} />
         <LinearGradient
-          colors={['transparent', 'rgba(10,10,15,0.4)', 'rgba(10,10,15,0.92)']}
+          colors={['transparent', 'rgba(10,10,15,0.5)', 'rgba(10,10,15,0.94)']}
           style={styles.backdropGradient}
         />
 
@@ -102,9 +120,14 @@ export default function PlayerScreen() {
             <FontAwesome6 name="chevron-down" size={18} color="#F5F5F7" />
           </TouchableOpacity>
           <Text style={styles.topTitle}>正在播放</Text>
-          <TouchableOpacity style={styles.roundBtn} onPress={() => setShowQueue((s) => !s)}>
-            <FontAwesome6 name="list-ul" size={17} color={showQueue ? '#A78BFA' : '#F5F5F7'} />
-          </TouchableOpacity>
+          <View style={styles.topRight}>
+            <TouchableOpacity style={styles.roundBtn} onPress={() => setThemeVisible(true)}>
+              <FontAwesome6 name="palette" size={17} color="#F5F5F7" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.roundBtn} onPress={() => setShowQueue((s) => !s)}>
+              <FontAwesome6 name="list-ul" size={17} color={showQueue ? '#A78BFA' : '#F5F5F7'} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {!current ? (
@@ -218,6 +241,46 @@ export default function PlayerScreen() {
             )}
           </ScrollView>
         )}
+
+        {/* 背景色选择面板 */}
+        <Modal
+          visible={themeVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setThemeVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setThemeVisible(false)}>
+            <View style={styles.sheetOverlay}>
+              <TouchableWithoutFeedback onPress={() => undefined}>
+                <View style={styles.sheet}>
+                  <Text style={styles.sheetTitle}>选择背景色</Text>
+                  <View style={styles.swatchRow}>
+                    {BG_THEMES.map((t, i) => (
+                      <TouchableOpacity
+                        key={t.name}
+                        style={styles.swatchWrap}
+                        onPress={() => {
+                          setThemeIdx(i);
+                          setThemeVisible(false);
+                        }}
+                      >
+                        <View style={styles.swatchInner}>
+                          <LinearGradient colors={t.colors} style={styles.swatch} />
+                          {themeIdx === i ? (
+                            <View style={styles.swatchCheck}>
+                              <FontAwesome6 name="check" size={14} color="#ffffff" />
+                            </View>
+                          ) : null}
+                        </View>
+                        <Text style={styles.swatchName}>{t.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </View>
     </Screen>
   );
@@ -234,6 +297,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  backdropImage: { opacity: 0.5 },
   backdropDim: {
     position: 'absolute',
     top: 0,
@@ -265,6 +329,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   topTitle: { color: '#F5F5F7', fontSize: 15, fontWeight: '600' },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   noCurrent: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   noCurrentText: { color: '#F5F5F7', fontSize: 18, fontWeight: '700' },
   noCurrentHint: { color: 'rgba(245,245,247,0.5)', fontSize: 14, marginTop: 8 },
@@ -323,4 +388,49 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   queueName: { color: 'rgba(245,245,247,0.85)', fontSize: 14, flex: 1 },
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  sheet: {
+    backgroundColor: '#181420',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 40,
+  },
+  sheetTitle: {
+    color: '#F5F5F7',
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  swatchRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 16,
+  },
+  swatchWrap: { width: '30%', alignItems: 'center' },
+  swatchInner: { position: 'relative' },
+  swatch: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+  },
+  swatchCheck: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#2DD4BF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchName: { color: 'rgba(245,245,247,0.65)', fontSize: 12, marginTop: 8 },
 });

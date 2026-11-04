@@ -26,6 +26,7 @@ interface MusicPlayerContextValue {
   repeatMode: RepeatMode;
   shuffle: boolean;
   playQueue: (tracks: Track[], index: number) => Promise<void>;
+  removeTrackFromQueue: (trackId: string) => void;
   togglePlay: () => Promise<void>;
   next: () => void;
   prev: () => void;
@@ -149,6 +150,38 @@ export const MusicPlayerProvider: React.FC<{ children: ReactNode }> = ({ childre
     [goTo]
   );
 
+  // 从当前队列中移除一首曲目（用于歌曲删除）：若删除的是正在播放的歌曲，则自动续播下一首，否则保持播放队列
+  const removeTrackFromQueue = useCallback(
+    (trackId: string) => {
+      const { queue: q, currentIndex: idx } = playbackRef.current;
+      if (!q.length || !q.some((t) => t.id === trackId)) return;
+      const isCurrent = q[idx]?.id === trackId;
+      const newQueue = q.filter((t) => t.id !== trackId);
+      if (isCurrent) {
+        if (newQueue.length) {
+          const target = Math.min(idx, newQueue.length - 1);
+          goTo(newQueue, target, true);
+        } else {
+          soundRef.current?.stopAsync().catch(() => undefined);
+          soundRef.current?.unloadAsync().catch(() => undefined);
+          soundRef.current = null;
+          setQueue([]);
+          setCurrentIndex(-1);
+          setPositionMs(0);
+          setDurationMs(0);
+          setIsPlaying(false);
+        }
+      } else {
+        setQueue(newQueue);
+        if (idx > 0) {
+          const removedBefore = q.slice(0, idx).filter((t) => t.id === trackId).length;
+          if (removedBefore) setCurrentIndex(idx - removedBefore);
+        }
+      }
+    },
+    [goTo]
+  );
+
   const togglePlay = useCallback(async () => {
     const sound = soundRef.current;
     if (!sound) return;
@@ -240,6 +273,7 @@ export const MusicPlayerProvider: React.FC<{ children: ReactNode }> = ({ childre
       repeatMode,
       shuffle,
       playQueue,
+      removeTrackFromQueue,
       togglePlay,
       next,
       prev,
@@ -260,6 +294,7 @@ export const MusicPlayerProvider: React.FC<{ children: ReactNode }> = ({ childre
       repeatMode,
       shuffle,
       playQueue,
+      removeTrackFromQueue,
       togglePlay,
       next,
       prev,

@@ -1,11 +1,20 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { ImportButton } from '@/components/player/ImportButton';
 import { SongRow } from '@/components/player/SongRow';
-import { fetchTracks, type Track } from '@/utils/api';
+import { deleteTrack, fetchTracks, type Track } from '@/utils/api';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { FontAwesome6 } from '@expo/vector-icons';
 
@@ -13,7 +22,8 @@ export default function HomeScreen() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { playQueue, current } = useMusicPlayer();
+  const [deleting, setDeleting] = useState(false);
+  const { playQueue, current, removeTrackFromQueue } = useMusicPlayer();
 
   const load = useCallback(async () => {
     try {
@@ -46,6 +56,62 @@ export default function HomeScreen() {
     [tracks, playQueue]
   );
 
+  const confirmDelete = useCallback(
+    (track: Track) => {
+      if (deleting) return;
+      Alert.alert('删除歌曲', `确定删除《${track.title}》吗？\n该歌曲将从音乐库、歌单与播放历史中移除。`, [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '删除',
+          style: 'destructive',
+          onPress: () => {
+            setDeleting(true);
+            deleteTrack(track.id)
+              .then(() => {
+                setTracks((prev) => prev.filter((t) => t.id !== track.id));
+                removeTrackFromQueue(track.id); // 若正在播放该曲目则自动续播/停止
+              })
+              .catch((e) => Alert.alert('删除失败', (e as Error).message))
+              .finally(() => setDeleting(false));
+          },
+        },
+      ]);
+    },
+    [deleting, removeTrackFromQueue]
+  );
+
+  const renderTrailing = useCallback(
+    (track: Track) => (
+      <TouchableOpacity
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        onPress={(e) => {
+          e.stopPropagation();
+          confirmDelete(track);
+        }}
+      >
+        <View style={styles.deleteWrap}>
+          <FontAwesome6 name="trash-can" size={14} color="rgba(245,245,247,0.4)" />
+        </View>
+      </TouchableOpacity>
+    ),
+    [confirmDelete]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: Track }) => {
+      const isCurrent = current?.id === item.id;
+      return (
+        <SongRow
+          track={item}
+          onPress={handlePlay}
+          highlight={isCurrent}
+          renderTrailing={renderTrailing}
+        />
+      );
+    },
+    [handlePlay, current, renderTrailing]
+  );
+
   return (
     <Screen backgroundColor="#0A0A0F" statusBarStyle="light">
       <View style={styles.header}>
@@ -76,13 +142,7 @@ export default function HomeScreen() {
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8A63FF" />}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <SongRow
-              track={item}
-              onPress={handlePlay}
-              highlight={current?.id === item.id}
-            />
-          )}
+          renderItem={renderItem}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
         />
       )}
@@ -123,4 +183,10 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   sep: { height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginLeft: 64 },
+  deleteWrap: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

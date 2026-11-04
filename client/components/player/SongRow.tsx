@@ -8,6 +8,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 interface SongRowProps {
   track: Track;
   onPress?: (track: Track) => void;
+  onLongPress?: (track: Track) => void;
   highlight?: boolean;
   renderTrailing?: (track: Track) => React.ReactNode;
 }
@@ -20,7 +21,7 @@ export function trackTint(track: Track): string {
   return palettes[hashString(track.title) % palettes.length];
 }
 
-export function SongRow({ track, onPress, highlight, renderTrailing }: SongRowProps) {
+export function SongRow({ track, onPress, onLongPress, highlight, renderTrailing }: SongRowProps) {
   const { current } = useMusicPlayer();
   const isCurrent = current?.id === track.id;
   const cover = track.cover_url || coverForTitle(track.title, track.artist);
@@ -29,6 +30,8 @@ export function SongRow({ track, onPress, highlight, renderTrailing }: SongRowPr
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={() => onPress?.(track)}
+      onLongPress={() => onLongPress?.(track)}
+      delayLongPress={350}
       style={styles.row}
     >
       <View style={[styles.coverWrap, { backgroundColor: trackTint(track) }]}>

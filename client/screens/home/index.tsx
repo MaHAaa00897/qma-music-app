@@ -13,6 +13,7 @@ import { useFocusEffect } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { ImportButton } from '@/components/player/ImportButton';
+import { ThemeModeToggle } from '@/components/ThemeModeToggle';
 import { SongRow } from '@/components/player/SongRow';
 import { deleteTrack, fetchTracks, type Track } from '@/utils/api';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
@@ -119,7 +120,10 @@ export default function HomeScreen() {
           <Text style={styles.brand}>Q马音乐</Text>
           <Text style={styles.subtitle}>我的音乐库</Text>
         </View>
-        <ImportButton onImported={load} />
+        <View style={styles.headerActions}>
+          <ThemeModeToggle />
+          <ImportButton onImported={load} />
+        </View>
       </View>
 
       {loading ? (
@@ -161,6 +165,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 14,
   },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   brand: { color: '#F5F5F7', fontSize: 28, fontWeight: '800', letterSpacing: 0.5 },
   subtitle: { color: 'rgba(245,245,247,0.5)', fontSize: 13, marginTop: 4 },
   list: { flex: 1 },

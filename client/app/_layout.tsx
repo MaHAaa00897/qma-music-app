@@ -4,6 +4,7 @@ import { LogBox } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { Provider } from '@/components/Provider';
 import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
+import { ThemeModeProvider } from '@/contexts/ThemeModeContext';
 
 import '../global.css';
 
@@ -14,8 +15,9 @@ LogBox.ignoreLogs([
 
 export default function RootLayout() {
   return (
-    <Provider>
-      <MusicPlayerProvider>
+    <ThemeModeProvider>
+      <Provider>
+        <MusicPlayerProvider>
         <StatusBar style="light" />
         <Stack
           screenOptions={{
@@ -31,6 +33,7 @@ export default function RootLayout() {
         </Stack>
         <Toast />
       </MusicPlayerProvider>
-    </Provider>
+      </Provider>
+    </ThemeModeProvider>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { Audio } from 'expo-av';
 import { createTrack } from '@/utils/api';
 import { coverForTitle, fileTitleFromName } from '@/utils/format';
 import { FontAwesome6 } from '@expo/vector-icons';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeModeContext';
 
 interface ImportButtonProps {
   onImported?: () => void;
@@ -77,6 +78,9 @@ async function pickMany(): Promise<Picked[]> {
 }
 
 export function ImportButton({ onImported, style }: ImportButtonProps) {
+  const { colors } = useTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
+
   const [menuVisible, setMenuVisible] = useState(false);
   const [picking, setPicking] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -195,45 +199,45 @@ export function ImportButton({ onImported, style }: ImportButtonProps) {
     <>
       <TouchableOpacity
         activeOpacity={0.85}
-        style={[styles.button, style]}
+        style={[s.button, style]}
         onPress={() => setMenuVisible(true)}
         disabled={picking}
       >
         {picking ? (
-          <ActivityIndicator color="#fff" size="small" />
+          <ActivityIndicator color={colors.onPrimary} size="small" />
         ) : (
-          <FontAwesome6 name="plus" size={16} color="#fff" />
+          <FontAwesome6 name="plus" size={16} color={colors.onPrimary} />
         )}
-        <Text style={styles.buttonText}>导入音乐</Text>
+        <Text style={s.buttonText}>导入音乐</Text>
       </TouchableOpacity>
 
       {/* 导入方式选择 */}
       <Modal visible={menuVisible} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
-          <View style={styles.menuBackdrop}>
-            <View style={styles.menuCard}>
-              <Text style={styles.menuTitle}>导入音乐</Text>
-              <TouchableOpacity style={styles.menuRow} onPress={handleMenuFile}>
-                <View style={[styles.menuIcon, { backgroundColor: 'rgba(138,99,255,0.16)' }]}>
+          <View style={s.menuBackdrop}>
+            <View style={s.menuCard}>
+              <Text style={s.menuTitle}>导入音乐</Text>
+              <TouchableOpacity style={s.menuRow} onPress={handleMenuFile}>
+                <View style={[s.menuIcon, { backgroundColor: 'rgba(138,99,255,0.16)' }]}>
                   <FontAwesome6 name="file-audio" size={18} color="#A78BFA" />
                 </View>
-                <View style={styles.menuRowText}>
-                  <Text style={styles.menuRowTitle}>选择音频文件</Text>
-                  <Text style={styles.menuRowDesc}>可自定义曲名与歌手后导入</Text>
+                <View style={s.menuRowText}>
+                  <Text style={s.menuRowTitle}>选择音频文件</Text>
+                  <Text style={s.menuRowDesc}>可自定义曲名与歌手后导入</Text>
                 </View>
-                <FontAwesome6 name="chevron-right" size={14} color="rgba(245,245,247,0.4)" />
+                <FontAwesome6 name="chevron-right" size={14} color={colors.textTertiary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.menuRow} onPress={handleBatchImport}>
-                <View style={[styles.menuIcon, { backgroundColor: 'rgba(14,159,138,0.16)' }]}>
+              <TouchableOpacity style={s.menuRow} onPress={handleBatchImport}>
+                <View style={[s.menuIcon, { backgroundColor: 'rgba(14,159,138,0.16)' }]}>
                   <FontAwesome6 name="folder-open" size={18} color="#2DD4BF" />
                 </View>
-                <View style={styles.menuRowText}>
-                  <Text style={styles.menuRowTitle}>从文件夹 / 批量导入</Text>
-                  <Text style={styles.menuRowDesc}>
+                <View style={s.menuRowText}>
+                  <Text style={s.menuRowTitle}>从文件夹 / 批量导入</Text>
+                  <Text style={s.menuRowDesc}>
                     {Platform.OS === 'web' ? '选择整个文件夹，自动导入全部音频' : '一次选择多个音频文件批量导入'}
                   </Text>
                 </View>
-                <FontAwesome6 name="chevron-right" size={14} color="rgba(245,245,247,0.4)" />
+                <FontAwesome6 name="chevron-right" size={14} color={colors.textTertiary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -247,49 +251,49 @@ export function ImportButton({ onImported, style }: ImportButtonProps) {
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>导入曲目</Text>
+            <View style={s.modalContainer}>
+              <View style={s.modalContent}>
+                <View style={s.modalHeader}>
+                  <Text style={s.modalTitle}>导入曲目</Text>
                   <TouchableOpacity onPress={() => setModalVisible(false)}>
-                    <FontAwesome6 name="xmark" size={18} color="rgba(245,245,247,0.7)" />
+                    <FontAwesome6 name="xmark" size={18} color={colors.textDim} />
                   </TouchableOpacity>
                 </View>
-                <ScrollView style={styles.modalBody}>
-                  <Text style={styles.fileName}>{asset?.name}</Text>
-                  <Text style={styles.label}>曲名</Text>
+                <ScrollView style={s.modalBody}>
+                  <Text style={s.fileName}>{asset?.name}</Text>
+                  <Text style={s.label}>曲名</Text>
                   <TextInput
-                    style={styles.input}
+                    style={s.input}
                     value={title}
                     onChangeText={setTitle}
                     placeholder="请输入曲名"
-                    placeholderTextColor="rgba(245,245,247,0.35)"
+                    placeholderTextColor={colors.placeholder}
                   />
-                  <Text style={styles.label}>歌手</Text>
+                  <Text style={s.label}>歌手</Text>
                   <TextInput
-                    style={styles.input}
+                    style={s.input}
                     value={artist}
                     onChangeText={setArtist}
                     placeholder="请输入歌手（可选）"
-                    placeholderTextColor="rgba(245,245,247,0.35)"
+                    placeholderTextColor={colors.placeholder}
                   />
                 </ScrollView>
-                <View style={styles.modalFooter}>
+                <View style={s.modalFooter}>
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
+                    style={[s.modalButton, s.cancelButton]}
                     onPress={() => setModalVisible(false)}
                   >
-                    <Text style={styles.cancelButtonText}>取消</Text>
+                    <Text style={s.cancelButtonText}>取消</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.submitButton]}
+                    style={[s.modalButton, s.submitButton]}
                     onPress={handleSave}
                     disabled={saving}
                   >
                     {saving ? (
-                      <ActivityIndicator color="#fff" size="small" />
+                      <ActivityIndicator color={colors.onPrimary} size="small" />
                     ) : (
-                      <Text style={styles.submitButtonText}>保存并导入</Text>
+                      <Text style={s.submitButtonText}>保存并导入</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -301,10 +305,10 @@ export function ImportButton({ onImported, style }: ImportButtonProps) {
 
       {/* 批量导入进度遮罩 */}
       <Modal visible={saving && !modalVisible} transparent animationType="fade">
-        <View style={styles.progressBackdrop}>
-          <View style={styles.progressCard}>
-            <ActivityIndicator color="#8A63FF" size="large" />
-            <Text style={styles.progressText}>{savingText}</Text>
+        <View style={s.progressBackdrop}>
+          <View style={s.progressCard}>
+            <ActivityIndicator color={colors.primary} size="large" />
+            <Text style={s.progressText}>{savingText}</Text>
           </View>
         </View>
       </Modal>
@@ -312,100 +316,101 @@ export function ImportButton({ onImported, style }: ImportButtonProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#6D5CE8',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  buttonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  menuBackdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  menuCard: {
-    backgroundColor: '#14141B',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-  },
-  menuTitle: { color: '#F5F5F7', fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    gap: 14,
-  },
-  menuIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuRowText: { flex: 1 },
-  menuRowTitle: { color: '#F5F5F7', fontSize: 15, fontWeight: '600' },
-  menuRowDesc: { color: 'rgba(245,245,247,0.5)', fontSize: 12, marginTop: 3 },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#14141B',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  modalTitle: { color: '#F5F5F7', fontSize: 18, fontWeight: '700' },
-  modalBody: { marginTop: 12, maxHeight: 320 },
-  fileName: { color: 'rgba(245,245,247,0.45)', fontSize: 13, marginBottom: 14 },
-  label: { color: 'rgba(245,245,247,0.6)', fontSize: 12, marginBottom: 6, marginTop: 8 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#F5F5F7',
-    fontSize: 15,
-  },
-  modalFooter: { flexDirection: 'row', gap: 12, marginTop: 18 },
-  modalButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 13,
-    borderRadius: 14,
-  },
-  cancelButton: { backgroundColor: 'rgba(255,255,255,0.08)' },
-  cancelButtonText: { color: 'rgba(245,245,247,0.7)', fontSize: 15, fontWeight: '600' },
-  submitButton: { backgroundColor: '#6D5CE8' },
-  submitButtonText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  progressBackdrop: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  progressCard: {
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: '#14141B',
-    paddingHorizontal: 32,
-    paddingVertical: 24,
-    borderRadius: 20,
-  },
-  progressText: { color: 'rgba(245,245,247,0.8)', fontSize: 14 },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: c.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 14,
+    },
+    buttonText: { color: c.onPrimary, fontSize: 14, fontWeight: '700' },
+    menuBackdrop: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0,0,0,0.55)',
+    },
+    menuCard: {
+      backgroundColor: c.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 20,
+      paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    },
+    menuTitle: { color: c.textPrimary, fontSize: 18, fontWeight: '700', marginBottom: 12 },
+    menuRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      gap: 14,
+    },
+    menuIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    menuRowText: { flex: 1 },
+    menuRowTitle: { color: c.textPrimary, fontSize: 15, fontWeight: '600' },
+    menuRowDesc: { color: c.textDim, fontSize: 12, marginTop: 3 },
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+      backgroundColor: c.sheet,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 20,
+      paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    modalTitle: { color: c.textPrimary, fontSize: 18, fontWeight: '700' },
+    modalBody: { marginTop: 12, maxHeight: 320 },
+    fileName: { color: c.textDim, fontSize: 13, marginBottom: 14 },
+    label: { color: c.textDim, fontSize: 12, marginBottom: 6, marginTop: 8 },
+    input: {
+      backgroundColor: c.inputBg,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      color: c.inputText,
+      fontSize: 15,
+    },
+    modalFooter: { flexDirection: 'row', gap: 12, marginTop: 18 },
+    modalButton: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 13,
+      borderRadius: 14,
+    },
+    cancelButton: { backgroundColor: c.inputBg },
+    cancelButtonText: { color: c.textPrimary, fontSize: 15, fontWeight: '600' },
+    submitButton: { backgroundColor: c.primary },
+    submitButtonText: { color: c.onPrimary, fontSize: 15, fontWeight: '700' },
+    progressBackdrop: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    progressCard: {
+      alignItems: 'center',
+      gap: 14,
+      backgroundColor: c.sheet,
+      paddingHorizontal: 32,
+      paddingVertical: 24,
+      borderRadius: 20,
+    },
+    progressText: { color: c.textPrimary, fontSize: 14 },
+  });

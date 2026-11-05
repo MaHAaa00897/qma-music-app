@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeModeContext';
 import type { Track } from '@/utils/api';
 import { coverForTitle, formatDuration, hashString } from '@/utils/format';
 import { FontAwesome6 } from '@expo/vector-icons';
@@ -23,6 +24,9 @@ export function trackTint(track: Track): string {
 
 export function SongRow({ track, onPress, onLongPress, highlight, renderTrailing }: SongRowProps) {
   const { current } = useMusicPlayer();
+  const { colors } = useTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
+
   const isCurrent = current?.id === track.id;
   const cover = track.cover_url || coverForTitle(track.title, track.artist);
 
@@ -32,82 +36,83 @@ export function SongRow({ track, onPress, onLongPress, highlight, renderTrailing
       onPress={() => onPress?.(track)}
       onLongPress={() => onLongPress?.(track)}
       delayLongPress={350}
-      style={styles.row}
+      style={s.row}
     >
-      <View style={[styles.coverWrap, { backgroundColor: trackTint(track) }]}>
+      <View style={[s.coverWrap, { backgroundColor: trackTint(track) }]}>
         {isCurrent && (
-          <View style={styles.playingBadge}>
-            <View style={[styles.bar, styles.b1]} />
-            <View style={[styles.bar, styles.b2]} />
-            <View style={[styles.bar, styles.b3]} />
+          <View style={s.playingBadge}>
+            <View style={[s.bar, s.b1]} />
+            <View style={[s.bar, s.b2]} />
+            <View style={[s.bar, s.b3]} />
           </View>
         )}
-        <Image source={{ uri: cover }} style={styles.cover} resizeMode="cover" />
+        <Image source={{ uri: cover }} style={s.cover} resizeMode="cover" />
       </View>
-      <View style={styles.info}>
+      <View style={s.info}>
         <Text
           numberOfLines={1}
-          style={[styles.title, (highlight || isCurrent) && styles.titleActive]}
+          style={[s.title, (highlight || isCurrent) && s.titleActive]}
         >
           {track.title}
         </Text>
-        <Text numberOfLines={1} style={styles.artist}>
+        <Text numberOfLines={1} style={s.artist}>
           {track.artist}
         </Text>
       </View>
       {renderTrailing ? (
         renderTrailing(track)
       ) : (
-        <View style={styles.meta}>
-          <Text style={styles.duration}>{formatDuration(track.duration_ms)}</Text>
-          {isCurrent && <FontAwesome6 name="play" size={12} color="#8A63FF" />}
+        <View style={s.meta}>
+          <Text style={s.duration}>{formatDuration(track.duration_ms)}</Text>
+          {isCurrent && <FontAwesome6 name="play" size={12} color={colors.primary} />}
         </View>
       )}
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
-  },
-  coverWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  cover: {
-    width: '100%',
-    height: '100%',
-  },
-  playingBadge: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 2,
-    backgroundColor: 'rgba(10,10,15,0.7)',
-    paddingHorizontal: 5,
-    paddingVertical: 4,
-    borderTopLeftRadius: 8,
-  },
-  bar: { width: 3, borderRadius: 2, backgroundColor: '#fff' },
-  b1: { height: 8 },
-  b2: { height: 13 },
-  b3: { height: 6 },
-  info: { flex: 1 },
-  title: {
-    color: 'rgba(245,245,247,0.92)',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  titleActive: { color: '#A78BFA' },
-  artist: { color: 'rgba(245,245,247,0.5)', fontSize: 13, marginTop: 3 },
-  meta: { alignItems: 'flex-end', gap: 4 },
-  duration: { color: 'rgba(245,245,247,0.45)', fontSize: 12 },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 8,
+      gap: 12,
+    },
+    coverWrap: {
+      width: 52,
+      height: 52,
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+    cover: {
+      width: '100%',
+      height: '100%',
+    },
+    playingBadge: {
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: 2,
+      backgroundColor: 'rgba(10,10,15,0.7)',
+      paddingHorizontal: 5,
+      paddingVertical: 4,
+      borderTopLeftRadius: 8,
+    },
+    bar: { width: 3, borderRadius: 2, backgroundColor: '#fff' },
+    b1: { height: 8 },
+    b2: { height: 13 },
+    b3: { height: 6 },
+    info: { flex: 1 },
+    title: {
+      color: c.textPrimary,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    titleActive: { color: c.primary },
+    artist: { color: c.textDim, fontSize: 13, marginTop: 3 },
+    meta: { alignItems: 'flex-end', gap: 4 },
+    duration: { color: c.textTertiary, fontSize: 12 },
+  });

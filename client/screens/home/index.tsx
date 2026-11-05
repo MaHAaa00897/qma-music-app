@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -30,9 +30,13 @@ import {
   type Track,
 } from '@/utils/api';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeModeContext';
 import { FontAwesome6 } from '@expo/vector-icons';
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
+
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -211,8 +215,8 @@ export default function HomeScreen() {
       if (selectionMode) {
         const sel = selectedIds.includes(track.id);
         return (
-          <View style={[styles.selectDot, sel && styles.selectDotOn]}>
-            {sel && <FontAwesome6 name="check" size={12} color="#fff" />}
+          <View style={[s.selectDot, sel && s.selectDotOn]}>
+            {sel && <FontAwesome6 name="check" size={12} color={colors.onPrimary} />}
           </View>
         );
       }
@@ -224,13 +228,13 @@ export default function HomeScreen() {
             confirmDelete(track);
           }}
         >
-          <View style={styles.deleteWrap}>
-            <FontAwesome6 name="trash-can" size={14} color="rgba(245,245,247,0.4)" />
+          <View style={s.deleteWrap}>
+            <FontAwesome6 name="trash-can" size={14} color={colors.iconInactive} />
           </View>
         </TouchableOpacity>
       );
     },
-    [selectionMode, selectedIds, confirmDelete]
+    [selectionMode, selectedIds, confirmDelete, colors]
   );
 
   const renderItem = useCallback(
@@ -250,71 +254,73 @@ export default function HomeScreen() {
   );
 
   return (
-    <Screen backgroundColor="#0A0A0F" statusBarStyle="light">
-      <View style={styles.header}>
+    <Screen backgroundColor={colors.background} statusBarStyle={colors.statusBarStyle}>
+      <View style={s.header}>
         <View>
-          <Text style={styles.brand}>Q马音乐</Text>
-          <Text style={styles.subtitle}>{selectionMode ? '选择要管理的歌曲' : '我的音乐库'}</Text>
+          <Text style={s.brand}>Q马音乐</Text>
+          <Text style={s.subtitle}>{selectionMode ? '选择要管理的歌曲' : '我的音乐库'}</Text>
         </View>
         {!selectionMode ? (
-          <View style={styles.headerActions}>
+          <View style={s.headerActions}>
             <ThemeModeToggle />
             <ImportButton onImported={load} />
           </View>
         ) : (
-          <TouchableOpacity onPress={exitSelection} style={styles.headerClose}>
-            <FontAwesome6 name="xmark" size={18} color="rgba(245,245,247,0.85)" />
+          <TouchableOpacity onPress={exitSelection} style={s.headerClose}>
+            <FontAwesome6 name="xmark" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
 
       {/* 多选操作栏 */}
       {selectionMode && (
-        <View style={styles.selBar}>
-          <Text style={styles.selCount}>已选 {selectedIds.length} 首</Text>
-          <View style={styles.selActions}>
+        <View style={s.selBar}>
+          <Text style={s.selCount}>已选 {selectedIds.length} 首</Text>
+          <View style={s.selActions}>
             <TouchableOpacity
-              style={[styles.selBtn, styles.selBtnAdd]}
+              style={[s.selBtn, s.selBtnAdd]}
               disabled={selectedIds.length === 0}
               onPress={openPicker}
             >
-              <FontAwesome6 name="plus" size={12} color="#0A0A0F" />
-              <Text style={styles.selBtnAddText}>加入歌单</Text>
+              <FontAwesome6 name="plus" size={12} color={colors.onPrimary} />
+              <Text style={s.selBtnAddText}>加入歌单</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.selBtn, styles.selBtnDel]}
+              style={[s.selBtn, s.selBtnDel]}
               disabled={selectedIds.length === 0 || batching}
               onPress={confirmBatchDelete}
             >
-              <FontAwesome6 name="trash-can" size={12} color="#FF6B6B" />
-              <Text style={styles.selBtnDelText}>{batching ? '删除中…' : '删除'}</Text>
+              <FontAwesome6 name="trash-can" size={12} color={colors.danger} />
+              <Text style={s.selBtnDelText}>{batching ? '删除中…' : '删除'}</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color="#8A63FF" size="large" />
+        <View style={s.center}>
+          <ActivityIndicator color={colors.refreshTint} size="large" />
         </View>
       ) : tracks.length === 0 ? (
-        <View style={styles.center}>
-          <View style={styles.emptyIcon}>
-            <FontAwesome6 name="music" size={28} color="#8A63FF" />
+        <View style={s.center}>
+          <View style={s.emptyIcon}>
+            <FontAwesome6 name="music" size={28} color={colors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>还没有音乐</Text>
-          <Text style={styles.emptyDesc}>点击右上角「导入音乐」，从本地选择音频文件开始你的音乐之旅</Text>
+          <Text style={s.emptyTitle}>还没有音乐</Text>
+          <Text style={s.emptyDesc}>点击右上角「导入音乐」，从本地选择音频文件开始你的音乐之旅</Text>
         </View>
       ) : (
         <FlatList
-          style={styles.list}
+          style={s.list}
           data={tracks}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8A63FF" />}
+          contentContainerStyle={s.listContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.refreshTint} />
+          }
           showsVerticalScrollIndicator={false}
           renderItem={renderItem}
-          ItemSeparatorComponent={() => <View style={styles.sep} />}
+          ItemSeparatorComponent={() => <View style={s.sep} />}
         />
       )}
 
@@ -322,48 +328,46 @@ export default function HomeScreen() {
 
       {/* 添加到歌单面板 */}
       <Modal visible={pickerVisible} transparent animationType="slide">
-        <KeyboardAvoidingView style={styles.modalRoot} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <TouchableOpacity style={styles.modalMask} activeOpacity={1} onPress={() => setPickerVisible(false)} />
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>添加到歌单</Text>
+        <KeyboardAvoidingView style={s.modalRoot} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <TouchableOpacity style={s.modalMask} activeOpacity={1} onPress={() => setPickerVisible(false)} />
+          <View style={s.sheet}>
+            <View style={s.sheetHeader}>
+              <Text style={s.sheetTitle}>添加到歌单</Text>
               <TouchableOpacity onPress={() => setPickerVisible(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <FontAwesome6 name="xmark" size={16} color="rgba(245,245,247,0.6)" />
+                <FontAwesome6 name="xmark" size={16} color={colors.textDim} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.createRow}>
+            <View style={s.createRow}>
               <TextInput
-                style={styles.createInput}
+                style={s.createInput}
                 placeholder="新建歌单名称…"
-                placeholderTextColor="rgba(245,245,247,0.35)"
+                placeholderTextColor={colors.placeholder}
                 value={newListName}
                 onChangeText={setNewListName}
                 returnKeyType="done"
               />
-              <TouchableOpacity style={styles.createBtn} onPress={createAndAdd}>
-                <Text style={styles.createBtnText}>新建并添加</Text>
+              <TouchableOpacity style={s.createBtn} onPress={createAndAdd}>
+                <Text style={s.createBtnText}>新建并添加</Text>
               </TouchableOpacity>
             </View>
 
             <FlatList
               data={playlists}
               keyExtractor={(item) => item.id}
-              style={styles.pickerList}
+              style={s.pickerList}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 8 }}
-              ListEmptyComponent={
-                <Text style={styles.pickerEmpty}>还没有歌单，请在「歌单」页创建或直接在上方新建</Text>
-              }
+              ListEmptyComponent={<Text style={s.pickerEmpty}>还没有歌单，请在「歌单」页创建或直接在上方新建</Text>}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.pickRow} onPress={() => addSelectedTo(item.id)}>
-                  <View style={styles.pickIcon}>
-                    <FontAwesome6 name="list-ul" size={15} color="#8A63FF" />
+                <TouchableOpacity style={s.pickRow} onPress={() => addSelectedTo(item.id)}>
+                  <View style={s.pickIcon}>
+                    <FontAwesome6 name="list-ul" size={15} color={colors.primary} />
                   </View>
-                  <Text style={styles.pickName} numberOfLines={1}>
+                  <Text style={s.pickName} numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <FontAwesome6 name="chevron-right" size={13} color="rgba(245,245,247,0.35)" />
+                  <FontAwesome6 name="chevron-right" size={13} color={colors.textTertiary} />
                 </TouchableOpacity>
               )}
             />
@@ -374,133 +378,129 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 14,
-  },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerClose: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  brand: { color: '#F5F5F7', fontSize: 26, fontWeight: '800', letterSpacing: 0.5 },
-  subtitle: { color: 'rgba(245,245,247,0.5)', fontSize: 13, marginTop: 4 },
-  // 多选操作栏
-  selBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: 20,
-    marginBottom: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 14,
-    backgroundColor: 'rgba(138,99,255,0.14)',
-  },
-  selCount: { color: '#E9E4FF', fontSize: 13, fontWeight: '600' },
-  selActions: { flexDirection: 'row', gap: 8 },
-  selBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  selBtnAdd: { backgroundColor: '#8A63FF' },
-  selBtnAddText: { color: '#0A0A0F', fontSize: 12, fontWeight: '700' },
-  selBtnDel: { backgroundColor: 'rgba(255,107,107,0.12)' },
-  selBtnDelText: { color: '#FF6B6B', fontSize: 12, fontWeight: '700' },
-  list: { flex: 1 },
-  listContent: { paddingHorizontal: 20, paddingBottom: 12 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: 'rgba(138,99,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  emptyTitle: { color: '#F5F5F7', fontSize: 17, fontWeight: '700', marginBottom: 6 },
-  emptyDesc: {
-    color: 'rgba(245,245,247,0.5)',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 21,
-  },
-  sep: { height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginLeft: 64 },
-  deleteWrap: {
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // 多选勾选指示
-  selectDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(245,245,247,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectDotOn: { backgroundColor: '#8A63FF', borderColor: '#8A63FF' },
-  // 歌单面板
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalMask: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
-  sheet: {
-    backgroundColor: '#17141F',
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    paddingTop: 14,
-    paddingHorizontal: 20,
-    paddingBottom: 28,
-    maxHeight: '70%',
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  sheetTitle: { color: '#F5F5F7', fontSize: 16, fontWeight: '700' },
-  createRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  createInput: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    color: '#F5F5F7',
-    fontSize: 14,
-  },
-  createBtn: {
-    backgroundColor: '#8A63FF',
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    borderRadius: 12,
-  },
-  createBtnText: { color: '#0A0A0F', fontSize: 13, fontWeight: '700' },
-  pickerList: { marginTop: 4 },
-  pickerEmpty: { color: 'rgba(245,245,247,0.4)', fontSize: 13, textAlign: 'center', marginVertical: 18 },
-  pickRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-  },
-  pickIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(138,99,255,0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickName: { flex: 1, color: '#F5F5F7', fontSize: 15, fontWeight: '600' },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 14,
+    },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    headerClose: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    brand: { color: c.textPrimary, fontSize: 26, fontWeight: '800', letterSpacing: 0.5 },
+    subtitle: { color: c.textDim, fontSize: 13, marginTop: 4 },
+    // 多选操作栏
+    selBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginHorizontal: 20,
+      marginBottom: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: 14,
+      backgroundColor: c.primaryDim,
+    },
+    selCount: { color: c.textPrimary, fontSize: 13, fontWeight: '600' },
+    selActions: { flexDirection: 'row', gap: 8 },
+    selBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 20,
+    },
+    selBtnAdd: { backgroundColor: c.primary },
+    selBtnAddText: { color: c.onPrimary, fontSize: 12, fontWeight: '700' },
+    selBtnDel: { backgroundColor: c.dangerDim },
+    selBtnDelText: { color: c.danger, fontSize: 12, fontWeight: '700' },
+    list: { flex: 1 },
+    listContent: { paddingHorizontal: 20, paddingBottom: 12 },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
+    emptyIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 20,
+      backgroundColor: c.primaryDim,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    emptyTitle: { color: c.textPrimary, fontSize: 17, fontWeight: '700', marginBottom: 6 },
+    emptyDesc: { color: c.textDim, fontSize: 14, textAlign: 'center', lineHeight: 21 },
+    sep: { height: 1, backgroundColor: c.divider, marginLeft: 64 },
+    deleteWrap: {
+      width: 30,
+      height: 30,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // 多选勾选指示
+    selectDot: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: c.iconInactive,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    selectDotOn: { backgroundColor: c.primary, borderColor: c.primary },
+    // 歌单面板
+    modalRoot: { flex: 1, justifyContent: 'flex-end' },
+    modalMask: { ...StyleSheet.absoluteFillObject, backgroundColor: c.mask },
+    sheet: {
+      backgroundColor: c.sheet,
+      borderTopLeftRadius: 22,
+      borderTopRightRadius: 22,
+      paddingTop: 14,
+      paddingHorizontal: 20,
+      paddingBottom: 28,
+      maxHeight: '70%',
+    },
+    sheetHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    sheetTitle: { color: c.textPrimary, fontSize: 16, fontWeight: '700' },
+    createRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+    createInput: {
+      flex: 1,
+      backgroundColor: c.inputBg,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      color: c.inputText,
+      fontSize: 14,
+    },
+    createBtn: {
+      backgroundColor: c.primary,
+      paddingHorizontal: 14,
+      paddingVertical: 11,
+      borderRadius: 12,
+    },
+    createBtnText: { color: c.onPrimary, fontSize: 13, fontWeight: '700' },
+    pickerList: { marginTop: 4 },
+    pickerEmpty: { color: c.textTertiary, fontSize: 13, textAlign: 'center', marginVertical: 18 },
+    pickRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 12,
+    },
+    pickIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: c.primaryDim,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pickName: { flex: 1, color: c.textPrimary, fontSize: 15, fontWeight: '600' },
+  });

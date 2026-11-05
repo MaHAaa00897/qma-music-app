@@ -4,7 +4,7 @@ import { LogBox } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { Provider } from '@/components/Provider';
 import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
-import { ThemeModeProvider } from '@/contexts/ThemeModeContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeModeContext';
 
 import '../global.css';
 
@@ -13,12 +13,18 @@ LogBox.ignoreLogs([
   // 添加其它想暂时忽略的错误或警告信息
 ]);
 
+/** 全局状态栏：跟随当前主题的明暗决定文字颜色 */
+function ThemedStatusBar() {
+  const { resolvedTheme } = useTheme();
+  return <StatusBar style={resolvedTheme === 'light' ? 'dark' : 'light'} />;
+}
+
 export default function RootLayout() {
   return (
-    <ThemeModeProvider>
+    <ThemeProvider>
       <Provider>
         <MusicPlayerProvider>
-        <StatusBar style="light" />
+        <ThemedStatusBar />
         <Stack
           screenOptions={{
             animation: 'slide_from_right',
@@ -34,6 +40,6 @@ export default function RootLayout() {
         <Toast />
       </MusicPlayerProvider>
       </Provider>
-    </ThemeModeProvider>
+    </ThemeProvider>
   );
 }

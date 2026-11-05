@@ -1,15 +1,16 @@
 import { Fragment, useEffect, type ReactNode } from 'react';
 import { ColorSchemeName, Platform } from 'react-native';
 import { Uniwind } from 'uniwind'
-import { useThemeMode } from '@/contexts/ThemeModeContext';
+import { useTheme, useThemeMode } from '@/contexts/ThemeModeContext';
 
 const WebOnlyColorSchemeUpdater = function ({ children }: { children?: ReactNode }) {
+  const { resolvedTheme } = useTheme();
   const { mode } = useThemeMode();
 
-  // mode 变化时应用主题（'dark' | 'system'）
+  // 主题模式变化时应用（'light' | 'dark' | 'system' 解析后的实际主题）
   useEffect(() => {
-    Uniwind.setTheme(mode);
-  }, [mode]);
+    Uniwind.setTheme(resolvedTheme);
+  }, [resolvedTheme]);
 
   // Web 预览端跟随 host 颜色方案（仅当处于“跟随系统”时）
   useEffect(() => {
